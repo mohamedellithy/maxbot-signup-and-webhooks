@@ -102,9 +102,11 @@ class user_manager_model extends MY_Model {
 		]);
 	}
 
-	public function signup($fullname, $email, $password, $confirm_password, $timezone, $terms){
+	public function signup($fullname, $email,$phone_number,$password, $confirm_password, $timezone, $terms){
 		validate("min_length", __("Fullname"), $fullname, 5);
 		validate("null", __("Email is required"), $email);
+		validate("null", __("Phone Number is required"), $phone_number);
+		validate("numeric", __("Phone Number must be Numeric"), $phone_number);
 		validate("email", "", $email);
 
 		$email_check = $this->model->get("id", $this->tb_users, "email = '".addslashes($email)."'");
@@ -152,6 +154,7 @@ class user_manager_model extends MY_Model {
 			"role"            => 0,
 			"fullname"        => $fullname,
 			"email"           => $email,
+			"phone_number"    => $phone_number,
 			"password"        => md5($password),
 			"timezone"        => $timezone,
 			"package"         => $package_id,
@@ -195,6 +198,28 @@ class user_manager_model extends MY_Model {
 				}
 			}
 		}
+		
+		/** here put curl webhook **/
+		$curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => 'https://hook.eu1.make.com/udrgk59fp1im86hau43qku815lz04p22?fullname='.$fullname.'&email='.$email.'&timezone='.$timezone.'&created='.now().'&package_id='.$package_id.'&phone_number='.$phone_number,
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'POST',
+          CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json'
+          ),
+        ));
+        
+        $response = curl_exec($curl);
+        
+        curl_close($curl);
+		/** end webhook **/
 
 		ms([
 			"status" => "success",
